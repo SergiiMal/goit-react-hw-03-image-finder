@@ -41,6 +41,7 @@ export class Modal extends Component {
     );
   }
 }
+
 Modal.propTypes = {
   onGiveImg: PropTypes.object.isRequired,
 };

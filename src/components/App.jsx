@@ -1,14 +1,18 @@
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import React, { Component } from 'react';
-import { featchImages } from 'components/Api/Api';
+import { Report } from 'notiflix/build/notiflix-report-aio';
+
+import { fetchImage } from './Api/Api';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { LoadMoreBtn } from './Button/Button';
+import { Loader } from './Loader/Loader';
+
+import { Modal } from './Modal/Modal';
+
+import { errorMassage } from './Error/errorMessage';
+import { ErrorData } from './Error/ErrorData/ErrorData';
+
 import { Container } from './App.styled';
-import { Searchbar } from '../Searchbar/Searchbar';
-import { ImageGallery } from 'components/ImageGallery/ImageGallery';
-// import { Button } from 'components/Button/Button.styled';
-import { Loader } from 'components/Loader/Loader';
-import { LoadMoreBtn } from 'components/Button/Button';
-import { Modal } from 'components/Modal/Modal';
 
 export class App extends Component {
   state = {
@@ -27,6 +31,7 @@ export class App extends Component {
     if (this.state.search === search || search === '') {
       return;
     }
+
     try {
       this.setState({ images: null });
       this.setState({ isLoading: true });
@@ -34,19 +39,19 @@ export class App extends Component {
       this.setState({ pageNum: 2 });
       this.setState({ btnVision: true });
 
-      const response = await featchImages(search);
+      const response = await fetchImage(search);
       this.setState({ images: response.hits });
+
       if (response.total === 0) {
-        this.setState(toast.warn('Please enter a request!'));
+        this.setState({ error: errorMassage(search) });
       }
     } catch {
-      return toast.error(
-        'Sorry, there are no images matching your request. Please try again.'
-      );
+      this.setState({ error: ErrorData() });
     } finally {
       this.setState({ isLoading: false });
     }
   };
+
   onClickPageUp = async () => {
     try {
       this.setState({ isLoadingSpinner: true });
@@ -54,24 +59,23 @@ export class App extends Component {
       this.setState(prevState => {
         return { pageNum: prevState.pageNum + 1 };
       });
-      const response = await featchImages(search, pageNum);
+      const response = await fetchImage(search, pageNum);
 
       const nextPictures = response.hits;
       if (nextPictures.length < 1) {
         this.setState({ btnVision: false });
-        toast.info(
-          `That's all.
-          We're sorry, but you've reached the end of search results. `
+        Report.info(
+          "That's all",
+          "We're sorry, but you've reached the end of search results.",
+          'Okay'
         );
         return;
       }
       this.setState(prevState => ({
         images: [...prevState.images, ...nextPictures],
       }));
-    } catch (error) {
-      return toast.error(
-        'Sorry, there are no images matching your request. Please try again.'
-      );
+    } catch {
+      this.setState({ error: ErrorData() });
     } finally {
       this.setState({ isLoading: false });
       this.setState({ isLoadingSpinner: false });
@@ -85,16 +89,18 @@ export class App extends Component {
   updateModalPicture = img => {
     this.setState({ modalImg: img });
   };
+
   render() {
     const {
       images,
       isLoading,
       showModal,
       modalImg,
-      btnVision,
       error,
+      btnVision,
       isLoadingSpinner,
     } = this.state;
+
     return (
       <>
         <Container>
@@ -118,7 +124,7 @@ export class App extends Component {
               />
             </>
           )}
-          <ToastContainer autoClose={3000} />
+
           {showModal && (
             <Modal onClose={this.toggleModal} onGiveImg={modalImg} />
           )}
